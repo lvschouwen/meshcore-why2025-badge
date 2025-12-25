@@ -15,7 +15,9 @@ public:
 
 #ifdef WHY2025_ENABLE_DISPLAY_BL
     pinMode(15, OUTPUT);
-    digitalWrite(15, HIGH);
+    ledcAttach(15, 25000, 8);
+    // 6 is off, 7 is minimum
+    ledcWrite(15, 7);
 #endif
   }
 
