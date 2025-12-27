@@ -10,14 +10,16 @@ public:
 
 #ifdef WHY2025_ENABLE_KEYBOARD_BL
     pinMode(10, OUTPUT);
-    digitalWrite(10, HIGH);
+    ledcAttach(10, 25000, 8);
+    // unknown (untested) what the minimum is here
+    ledcWrite(10, 10);
 #endif
 
 #ifdef WHY2025_ENABLE_DISPLAY_BL
     pinMode(15, OUTPUT);
     ledcAttach(15, 25000, 8);
     // 6 is off, 7 is minimum
-    ledcWrite(15, 7);
+    ledcWrite(15, 10);
 #endif
   }
 
