@@ -946,13 +946,20 @@ void MyMesh::begin() {
   BaseChatMesh::begin();
 
   if (!_store->loadMainIdentity(self_id)) {
-    self_id = radio_new_identity(); // create new random identity
-    int count = 0;
-    while (count < 10 && (self_id.pub_key[0] == 0x00 || self_id.pub_key[0] == 0xFF)) { // reserved id hashes
-      self_id = radio_new_identity();
-      count++;
+    if (_store->hasMainIdentity()) {
+      // why2025-badge: a file that exists but can't be read (cut short, FS error) is never replaced, since a new
+      // identity would overwrite the only copy of the old one. No usable identity: the firmware must not transmit.
+      self_id = mesh::LocalIdentity();
+      identity_unreadable = true;
+    } else {
+      self_id = radio_new_identity(); // create new random identity
+      int count = 0;
+      while (count < 10 && (self_id.pub_key[0] == 0x00 || self_id.pub_key[0] == 0xFF)) { // reserved id hashes
+        self_id = radio_new_identity();
+        count++;
+      }
+      _store->saveMainIdentity(self_id);
     }
-    _store->saveMainIdentity(self_id);
   }
 
 // if name is provided as a build flag, use that as default node name instead

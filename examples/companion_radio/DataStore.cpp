@@ -181,6 +181,10 @@ bool DataStore::formatFileSystem() {
 #endif
 }
 
+bool DataStore::hasMainIdentity() {
+  return identity_store.exists("_main");
+}
+
 bool DataStore::loadMainIdentity(mesh::LocalIdentity &identity) {
   return identity_store.load("_main", identity);
 }

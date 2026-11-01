@@ -194,6 +194,9 @@ protected:
   }
 
 public:
+  // why2025-badge: begin() found an identity file it could not read and kept it (no new identity, nothing saved)
+  bool identityUnreadable() const { return identity_unreadable; }
+
   void savePrefs() {
     _prefs.node_lat = sensors.node_lat;
     _prefs.node_lon = sensors.node_lon;
@@ -216,6 +219,7 @@ public:
   bool hasPendingWork() const;
 
 private:
+  bool identity_unreadable = false;
   void writeOKFrame();
   void writeErrFrame(uint8_t err_code);
   void writeDisabledFrame();

@@ -1,5 +1,11 @@
 #include "IdentityStore.h"
 
+bool IdentityStore::exists(const char *name) {
+  char filename[40];
+  sprintf(filename, "%s/%s.id", _dir, name);
+  return _fs->exists(filename);
+}
+
 bool IdentityStore::load(const char *name, mesh::LocalIdentity& id) {
   bool loaded = false;
   char filename[40];
