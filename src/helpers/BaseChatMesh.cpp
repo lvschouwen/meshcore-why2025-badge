@@ -602,6 +602,9 @@ bool BaseChatMesh::importContact(const uint8_t src_buf[], uint8_t len) {
     if (pkt->readFrom(src_buf, len) && pkt->getPayloadType() == PAYLOAD_TYPE_ADVERT) {
       pkt->header |= ROUTE_TYPE_FLOOD;   // simulate it being received flood-mode
       getTables()->clear(pkt);  // remove packet hash from table, so we can receive/process it again
+      if (_pendingLoopback) {
+        releasePacket(_pendingLoopback);  // why2025-badge: a second import before loop() ran replaces the first, not leak it
+      }
       _pendingLoopback = pkt;  // loop-back, as if received over radio
       return true;  // success
     } else {
