@@ -1545,7 +1545,10 @@ void MyMesh::handleCmdFrame(size_t len) {
 #endif
   } else if (cmd_frame[0] == CMD_IMPORT_PRIVATE_KEY && len >= 65) {
 #if ENABLE_PRIVATE_KEY_IMPORT
-    if (!mesh::LocalIdentity::validatePrivateKey(&cmd_frame[1])) {
+    if (identity_unreadable) {
+      // why2025-badge (#110): the stored identity could not be read and is kept as it is; nothing is saved over it
+      writeErrFrame(ERR_CODE_BAD_STATE);
+    } else if (!mesh::LocalIdentity::validatePrivateKey(&cmd_frame[1])) {
         writeErrFrame(ERR_CODE_ILLEGAL_ARG); // invalid key
     } else {
         mesh::LocalIdentity identity;
@@ -2248,6 +2251,9 @@ void MyMesh::checkCLIRescueCmd() {
     if (handleCommand(cli_command, 0, reply_buf)) {
       // command was handled, print reply output
       Serial.print("  "); Serial.print(reply_buf); Serial.println();
+    } else if (strcmp(cli_command, "rebuild") == 0 && identity_unreadable) {
+      // why2025-badge (#110): self_id is all zeroes then; erasing would lose the unreadable file and save zeroes
+      Serial.println("  Error: identity file unreadable, not rebuilt");
     } else if (strcmp(cli_command, "rebuild") == 0) {
       bool success = _store->formatFileSystem();
       if (success) {
