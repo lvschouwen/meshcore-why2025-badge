@@ -687,6 +687,12 @@ uint8_t MyMesh::onContactRequest(const ContactInfo &contact, uint32_t sender_tim
   return 0; // unknown
 }
 
+// A response's bytes go into out_frame after a short header: true when n more bytes fit from index at. A longer
+// one is dropped (the app's frame limit is MAX_FRAME_SIZE; out_frame is one byte bigger).
+static bool response_fits(int at, int n) {
+  return n >= 0 && at + n <= MAX_FRAME_SIZE;
+}
+
 void MyMesh::onContactResponse(const ContactInfo &contact, const uint8_t *data, uint8_t len) {
   uint32_t tag;
   memcpy(&tag, data, 4);
@@ -733,6 +739,7 @@ void MyMesh::onContactResponse(const ContactInfo &contact, const uint8_t *data, 
     out_frame[i++] = 0; // reserved
     memcpy(&out_frame[i], contact.id.pub_key, 6);
     i += 6; // pub_key_prefix
+    if (!response_fits(i, len - 4)) return;
     memcpy(&out_frame[i], &data[4], len - 4);
     i += (len - 4);
     _serial->writeFrame(out_frame, i);
@@ -744,6 +751,7 @@ void MyMesh::onContactResponse(const ContactInfo &contact, const uint8_t *data, 
     out_frame[i++] = 0; // reserved
     memcpy(&out_frame[i], contact.id.pub_key, 6);
     i += 6; // pub_key_prefix
+    if (!response_fits(i, len - 4)) return;
     memcpy(&out_frame[i], &data[4], len - 4);
     i += (len - 4);
     _serial->writeFrame(out_frame, i);
@@ -755,6 +763,7 @@ void MyMesh::onContactResponse(const ContactInfo &contact, const uint8_t *data, 
     out_frame[i++] = 0; // reserved
     memcpy(&out_frame[i], &tag, 4);   // app needs to match this to RESP_CODE_SENT.tag
     i += 4;
+    if (!response_fits(i, len - 4)) return;
     memcpy(&out_frame[i], &data[4], len - 4);
     i += (len - 4);
     _serial->writeFrame(out_frame, i);
@@ -769,6 +778,7 @@ void MyMesh::onContactResponse(const ContactInfo &contact, const uint8_t *data, 
       int i = 0;
       out_frame[i++] = PUSH_CODE_BINARY_RESPONSE;
       out_frame[i++] = 0; // reserved
+      if (!response_fits(i, len)) return;
       memcpy(&out_frame[i], data, len);
       i += len;
       _serial->writeFrame(out_frame, i);
