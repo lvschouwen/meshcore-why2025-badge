@@ -694,20 +694,21 @@ static bool response_fits(int at, int n) {
 }
 
 void MyMesh::onContactResponse(const ContactInfo &contact, const uint8_t *data, uint8_t len) {
-  uint32_t tag;
-  memcpy(&tag, data, 4);
+  uint32_t tag = 0; // a response shorter than its tag: copy what is there
+  memcpy(&tag, data, len < 4 ? len : 4);
 
   if (pending_login && memcmp(&pending_login, contact.id.pub_key, 4) == 0) { // check for login response
     // yes, is response to pending sendLogin()
     pending_login = 0;
 
     int i = 0;
-    if (memcmp(&data[4], "OK", 2) == 0) { // legacy Repeater login OK response
+    // a short response is a failed login: every field read below must be inside it, not stale bytes behind it
+    if (len >= 6 && memcmp(&data[4], "OK", 2) == 0) { // legacy Repeater login OK response
       out_frame[i++] = PUSH_CODE_LOGIN_SUCCESS;
       out_frame[i++] = 0; // legacy: is_admin = false
       memcpy(&out_frame[i], contact.id.pub_key, 6);
       i += 6;                                     // pub_key_prefix
-    } else if (data[4] == RESP_SERVER_LOGIN_OK) { // new login response
+    } else if (len >= 13 && data[4] == RESP_SERVER_LOGIN_OK) { // new login response
       uint16_t keep_alive_secs = ((uint16_t)data[5]) * 16;
       if (keep_alive_secs > 0) {
         startConnection(contact, keep_alive_secs);
@@ -818,7 +819,7 @@ bool MyMesh::onContactPathRecv(ContactInfo& contact, uint8_t* in_path, uint8_t i
 }
 
 void MyMesh::onControlDataRecv(mesh::Packet *packet) {
-  if (packet->payload_len + 4 > sizeof(out_frame)) {
+  if (packet->payload_len + 4 > MAX_FRAME_SIZE) {
     MESH_DEBUG_PRINTLN("onControlDataRecv(), payload_len too long: %d", packet->payload_len);
     return;
   }
@@ -840,7 +841,7 @@ void MyMesh::onControlDataRecv(mesh::Packet *packet) {
 }
 
 void MyMesh::onRawDataRecv(mesh::Packet *packet) {
-  if (packet->payload_len + 4 > sizeof(out_frame)) {
+  if (packet->payload_len + 4 > MAX_FRAME_SIZE) {
     MESH_DEBUG_PRINTLN("onRawDataRecv(), payload_len too long: %d", packet->payload_len);
     return;
   }
@@ -865,7 +866,7 @@ void MyMesh::onRawDataRecv(mesh::Packet *packet) {
 void MyMesh::onTraceRecv(mesh::Packet *packet, uint32_t tag, uint32_t auth_code, uint8_t flags,
                          const uint8_t *path_snrs, const uint8_t *path_hashes, uint8_t path_len) {
   uint8_t path_sz = flags & 0x03;  // NEW v1.11+
-  if (12 + path_len + (path_len >> path_sz) + 1 > sizeof(out_frame)) {
+  if (12 + path_len + (path_len >> path_sz) + 1 > MAX_FRAME_SIZE) {
     MESH_DEBUG_PRINTLN("onTraceRecv(), path_len is too long: %d", (uint32_t)path_len);
     return;
   }
