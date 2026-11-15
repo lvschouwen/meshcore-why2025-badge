@@ -105,6 +105,9 @@ protected:
   virtual bool isAutoAddEnabled() const { return true; }
   virtual bool shouldAutoAddContactType(uint8_t type) const { return true; }
   virtual void onContactsFull() {};
+  // why2025-badge: how many contacts the table takes right now (1..MAX_CONTACTS). Above it, a new contact is refused
+  // or replaces the oldest, as for a full table; contacts already held stay.
+  virtual int getMaxContacts() const { return MAX_CONTACTS; }
   virtual bool shouldOverwriteWhenFull() const { return false; }
   virtual uint8_t getAutoAddMaxHops() const { return 0; }  // 0 = no limit, 1 = direct (0 hops), N = up to N-1 hops
   virtual void onContactOverwrite(const uint8_t* pub_key) {};

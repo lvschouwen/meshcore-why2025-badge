@@ -85,7 +85,7 @@ ContactInfo* BaseChatMesh::allocateContactSlot(bool transient_only) {
       return &contacts[oldest_idx];
     }
   } else {
-    if (num_contacts < MAX_ANON_CONTACTS+MAX_CONTACTS) {
+    if (num_contacts < MAX_ANON_CONTACTS+getMaxContacts()) {   // why2025-badge: a cap below MAX_CONTACTS at run time
       return &contacts[num_contacts++];
     } else if (shouldOverwriteWhenFull()) {
       // Find oldest non-favourite contact by oldest lastmod timestamp
